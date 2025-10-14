@@ -1,54 +1,56 @@
-public class Scanner {
-
+class Scanner {
     private byte[] input;
-    private int current = 0;
+    private int index;
 
-    public Scanner(byte[] input) {
+    Scanner(byte[] input) {
         this.input = input;
+        this.index = 0;
     }
 
-    // Retorna o caractere atual
     private char peek() {
-        if (current >= input.length) return '\0';
-        return (char) input[current];
+        return (index < input.length) ? (char) input[index] : '\0';
     }
 
-    // Avança uma posição no input
     private void advance() {
-        current++;
+        index++;
     }
 
-    // Lê e forma um número com mais de um dígito
-    private Token number() {
-        int start = current;
-        while (Character.isDigit(peek())) {
+    // ignora espaços e quebras de linha
+    private void skipWhitespace() {
+        char ch = peek();
+        while (ch == ' ' || ch == '\r' || ch == '\t' || ch == '\n') {
             advance();
+            ch = peek();
         }
-        String n = new String(input, start, current - start);
-        return new Token(TokenType.NUMBER, n);
     }
 
-    // Retorna o próximo token identificado
     public Token nextToken() {
+        skipWhitespace(); // evita erro com espaços
         char ch = peek();
 
-        if (ch == '0') {
-            advance();
-            return new Token(TokenType.NUMBER, Character.toString(ch));
-        } else if (Character.isDigit(ch))
-            return number();
-
-        switch (ch) {
-            case '+':
+        if (Character.isDigit(ch)) {
+            StringBuilder num = new StringBuilder();
+            while (Character.isDigit(peek())) {
+                num.append(peek());
                 advance();
-                return new Token(TokenType.PLUS, "+");
-            case '-':
-                advance();
-                return new Token(TokenType.MINUS, "-");
-            case '\0':
-                return new Token(TokenType.EOF, "EOF");
-            default:
-                throw new Error("lexical error at " + ch);
+            }
+            return new Token(TokenType.NUMBER, num.toString());
         }
+
+        if (ch == '+') {
+            advance();
+            return new Token(TokenType.PLUS, "+");
+        }
+
+        if (ch == '-') {
+            advance();
+            return new Token(TokenType.MINUS, "-");
+        }
+
+        if (ch == '\0') {
+            return new Token(TokenType.EOF, "");
+        }
+
+        throw new Error("Caractere inválido: " + ch);
     }
 }
