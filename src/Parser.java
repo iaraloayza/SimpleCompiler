@@ -1,37 +1,56 @@
 public class Parser {
-    private Scanner scanner; // analisador léxico
+
+    private Scanner scan;
+    private char currentToken;
 
     public Parser(byte[] input) {
-        this.scanner = new Scanner(input);
+        scan = new Scanner(input);
+        currentToken = scan.nextToken(); // primeiro token
     }
 
-    // expr -> number oper
-    void expr() {
-        number();
-        oper();
+    // Lê o próximo token do scanner
+    private void nextToken() {
+        currentToken = scan.nextToken();
     }
 
-    // number -> [0-9]+
-    void number() {
-        if (scanner.peek() == '\0') throw new Error("syntax error");
-        String num = scanner.getNumber(); // obtém número completo
-        System.out.println("push " + num);
+    // Verifica se o token é o esperado
+    private void match(char t) {
+        if (currentToken == t) {
+            nextToken();
+        } else {
+            throw new Error("syntax error");
+        }
     }
 
-    // oper -> + number oper | - number oper | ε
+    // Reconhece um número
+    void digit() {
+        if (Character.isDigit(currentToken)) {
+            System.out.println("push " + currentToken);
+            match(currentToken);
+        } else {
+            throw new Error("syntax error");
+        }
+    }
+
+    // Reconhece operadores + e -
     void oper() {
-        char token = scanner.peek();
-        if (token == '+') {
-            scanner.advance();
-            number();
+        if (currentToken == '+') {
+            match('+');
+            digit();
             System.out.println("add");
             oper();
-        } else if (token == '-') {
-            scanner.advance();
-            number();
+        } else if (currentToken == '-') {
+            match('-');
+            digit();
             System.out.println("sub");
             oper();
         }
+    }
+
+    // Expressão: número seguido por operadores
+    void expr() {
+        digit();
+        oper();
     }
 
     public void parse() {
