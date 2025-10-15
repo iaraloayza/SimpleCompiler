@@ -2,39 +2,39 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Scanner {
-    private byte[] input;
-    private int current = 0;
 
-    // Palavras-chave reconhecidas
+    private byte[] input;
+    private int current;
+
     private static final Map<String, TokenType> keywords;
+
     static {
         keywords = new HashMap<>();
         keywords.put("let", TokenType.LET);
+        keywords.put("print", TokenType.PRINT);
     }
 
     public Scanner(byte[] input) {
         this.input = input;
     }
 
-    private boolean isAtEnd() {
-        return current >= input.length;
-    }
-
     private char peek() {
-        return isAtEnd() ? '\0' : (char) input[current];
+        if (current < input.length)
+            return (char) input[current];
+        return '\0';
     }
 
-    private char advance() {
-        return (char) input[current++];
+    private void advance() {
+        char ch = peek();
+        if (ch != '\0')
+            current++;
     }
 
     private void skipWhitespace() {
-        while (!isAtEnd()) {
-            char ch = peek();
-            if (ch == ' ' || ch == '\r' || ch == '\t' || ch == '\n')
-                advance();
-            else
-                break;
+        char ch = peek();
+        while (ch == ' ' || ch == '\r' || ch == '\t' || ch == '\n') {
+            advance();
+            ch = peek();
         }
     }
 
@@ -50,14 +50,16 @@ public class Scanner {
 
     private Token number() {
         int start = current;
-        while (Character.isDigit(peek())) advance();
-        String num = new String(input, start, current - start);
-        return new Token(TokenType.NUMBER, num);
+        while (Character.isDigit(peek()))
+            advance();
+        String n = new String(input, start, current - start);
+        return new Token(TokenType.NUMBER, n);
     }
 
     private Token identifier() {
         int start = current;
-        while (isAlphaNumeric(peek())) advance();
+        while (isAlphaNumeric(peek()))
+            advance();
         String id = new String(input, start, current - start);
         TokenType type = keywords.get(id);
         if (type == null) type = TokenType.IDENT;
@@ -67,20 +69,31 @@ public class Scanner {
     public Token nextToken() {
         skipWhitespace();
 
-        if (isAtEnd()) return new Token(TokenType.EOF, "");
-
         char ch = peek();
 
-        // Identificadores e palavras-chave
         if (isAlpha(ch)) return identifier();
 
-        if (Character.isDigit(ch)) return number();
+        if (ch == '0') {
+            advance();
+            return new Token(TokenType.NUMBER, Character.toString(ch));
+        } else if (Character.isDigit(ch))
+            return number();
 
         switch (ch) {
-            case '+': advance(); return new Token(TokenType.PLUS, "+");
-            case '-': advance(); return new Token(TokenType.MINUS, "-");
-            case '=': advance(); return new Token(TokenType.EQ, "=");
-            case ';': advance(); return new Token(TokenType.SEMICOLON, ";");
+            case '+':
+                advance();
+                return new Token(TokenType.PLUS, "+");
+            case '-':
+                advance();
+                return new Token(TokenType.MINUS, "-");
+            case '=':
+                advance();
+                return new Token(TokenType.EQ, "=");
+            case ';':
+                advance();
+                return new Token(TokenType.SEMICOLON, ";");
+            case '\0':
+                return new Token(TokenType.EOF, "EOF");
             default:
                 throw new Error("lexical error at " + ch);
         }

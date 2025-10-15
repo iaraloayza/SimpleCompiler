@@ -5,8 +5,9 @@ public enum TokenType {
     NUMBER,
     IDENT,
 
-    // Palavra reservada
+    // Palavras reservadas
     LET,
+    PRINT,
 
     EOF
 }
