@@ -1,11 +1,10 @@
-class Parser {
-
+public class Parser {
     private Scanner scan;
     private Token currentToken;
 
-    Parser(byte[] input) {
+    public Parser(byte[] input) {
         scan = new Scanner(input);
-        nextToken();
+        currentToken = scan.nextToken();
     }
 
     private void nextToken() {
@@ -20,41 +19,52 @@ class Parser {
         }
     }
 
-    // expr -> number oper
-    void expr() {
-        number();
-        oper();
+    private void number() {
+        System.out.println("push " + currentToken.lexeme);
+        match(TokenType.NUMBER);
     }
 
-    // oper -> + number oper | - number oper | ε
-    void oper() {
+    private void term() {
+        if (currentToken.type == TokenType.NUMBER)
+            number();
+        else if (currentToken.type == TokenType.IDENT) {
+            System.out.println("push " + currentToken.lexeme);
+            match(TokenType.IDENT);
+        } else {
+            throw new Error("syntax error");
+        }
+    }
+
+    private void oper() {
         if (currentToken.type == TokenType.PLUS) {
             match(TokenType.PLUS);
-            number();
+            term();
             System.out.println("add");
             oper();
         } else if (currentToken.type == TokenType.MINUS) {
             match(TokenType.MINUS);
-            number();
+            term();
             System.out.println("sub");
             oper();
         }
     }
 
-    // number -> [0-9]+
-    void number() {
-        System.out.println("push " + currentToken.lexeme);
-        match(TokenType.NUMBER);
+    private void expr() {
+        term();
+        oper();
     }
 
-    void parse() {
+    private void letStatement() {
+        match(TokenType.LET);
+        var id = currentToken.lexeme; // nome da variável
+        match(TokenType.IDENT);
+        match(TokenType.EQ);
         expr();
-        System.out.println("Parsing concluído.");
+        System.out.println("pop " + id); // atribuição
+        match(TokenType.SEMICOLON);
     }
 
-    public static void main(String[] args) {
-        String input = "89 +508 -7+99";
-        Parser p = new Parser(input.getBytes());
-        p.parse();
+    public void parse() {
+        letStatement();
     }
 }
