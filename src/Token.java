@@ -1,6 +1,6 @@
 public class Token {
-    final TokenType type;
-    final String lexeme;
+    public TokenType type;
+    public String lexeme;
 
     public Token(TokenType type, String lexeme) {
         this.type = type;

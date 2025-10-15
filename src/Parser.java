@@ -1,11 +1,17 @@
-public class Parser {
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
+public class Parser {
     private Scanner scan;
     private Token currentToken;
+    private List<String> code = new ArrayList<>(); // guarda comandos gerados
 
     public Parser(byte[] input) {
-        scan = new Scanner(input);
-        currentToken = scan.nextToken();
+        InputStream stream = new ByteArrayInputStream(input);
+        this.scan = new Scanner(stream);
+        this.currentToken = scan.nextToken();
     }
 
     private void nextToken() {
@@ -20,73 +26,83 @@ public class Parser {
         }
     }
 
-    void number() {
-        System.out.println("push " + currentToken.lexeme);
-        match(TokenType.NUMBER);
+    // statements -> statement*
+    public void parse() {
+        statements();
     }
 
-    void term() {
-        if (currentToken.type == TokenType.NUMBER)
-            number();
-        else if (currentToken.type == TokenType.IDENT) {
-            System.out.println("push " + currentToken.lexeme);
-            match(TokenType.IDENT);
+    void statements() {
+        while (currentToken.type != TokenType.EOF) {
+            statement();
+        }
+    }
+
+    // statement -> printStatement | letStatement
+    void statement() {
+        if (currentToken.type == TokenType.PRINT) {
+            printStatement();
+        } else if (currentToken.type == TokenType.LET) {
+            letStatement();
         } else {
             throw new Error("syntax error");
         }
     }
 
+    // printStatement -> 'print' expr ';'
+    void printStatement() {
+        match(TokenType.PRINT);
+        expr();
+        code.add("print");
+        match(TokenType.SEMICOLON);
+    }
+
+    // letStatement -> 'let' ID '=' expr ';'
+    void letStatement() {
+        match(TokenType.LET);
+        String varName = currentToken.lexeme;
+        match(TokenType.ID);
+        match(TokenType.ASSIGN);
+        expr();
+        code.add("pop " + varName);
+        match(TokenType.SEMICOLON);
+    }
+
+    // expr -> number oper
     void expr() {
-        term();
+        number();
         oper();
     }
 
+    // oper -> + number oper | - number oper | ϵ
     void oper() {
         if (currentToken.type == TokenType.PLUS) {
             match(TokenType.PLUS);
-            term();
-            System.out.println("add");
+            number();
+            code.add("add");
             oper();
         } else if (currentToken.type == TokenType.MINUS) {
             match(TokenType.MINUS);
-            term();
-            System.out.println("sub");
+            number();
+            code.add("sub");
             oper();
         }
     }
 
-    void letStatement() {
-        match(TokenType.LET);
-        var id = currentToken.lexeme;
-        match(TokenType.IDENT);
-        match(TokenType.EQ);
-        expr();
-        System.out.println("pop " + id);
-        match(TokenType.SEMICOLON);
-    }
-
-    void printStatement() {
-        match(TokenType.PRINT);
-        expr();
-        System.out.println("print");
-        match(TokenType.SEMICOLON);
-    }
-
-    void statement() {
-        if (currentToken.type == TokenType.PRINT)
-            printStatement();
-        else if (currentToken.type == TokenType.LET)
-            letStatement();
-        else
+    // number -> [0-9]+ | ID
+    void number() {
+        if (currentToken.type == TokenType.NUMBER) {
+            code.add("push " + currentToken.lexeme);
+            match(TokenType.NUMBER);
+        } else if (currentToken.type == TokenType.ID) {
+            code.add("push " + currentToken.lexeme);
+            match(TokenType.ID);
+        } else {
             throw new Error("syntax error");
+        }
     }
 
-    void statements() {
-        while (currentToken.type != TokenType.EOF)
-            statement();
-    }
-
-    public void parse() {
-        statements();
+    // retorna código gerado como string
+    public String output() {
+        return String.join(System.lineSeparator(), code);
     }
 }
